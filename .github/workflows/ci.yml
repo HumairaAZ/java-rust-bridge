@@ -33,20 +33,18 @@ jobs:
         cd src/main/resources/META-INF/native
         cargo new rustlib --lib
         cd rustlib
-        echo '[lib]
-crate-type = ["cdylib"]
-
-[dependencies]
-jni = "0.19.0"
-' > Cargo.toml
-        echo 'use jni::sys::jint;
-use jni::JNIEnv;
-use jni::objects::JClass;
-
-#[no_mangle]
-pub extern "system" fn Java_com_example_Bridge_add(env: JNIEnv, class: JClass, a: jint, b: jint) -> jint {
-    a + b
-}' > src/lib.rs
+        echo '[lib]' > Cargo.toml
+        echo 'crate-type = ["cdylib"]' >> Cargo.toml
+        echo '[dependencies]' >> Cargo.toml
+        echo 'jni = "0.19.0"' >> Cargo.toml
+        echo 'use jni::sys::jint;' > src/lib.rs
+        echo 'use jni::JNIEnv;' >> src/lib.rs
+        echo 'use jni::objects::JClass;' >> src/lib.rs
+        echo '' >> src/lib.rs
+        echo '#[no_mangle]' >> src/lib.rs
+        echo 'pub extern "system" fn Java_com_example_Bridge_add(env: JNIEnv, class: JClass, a: jint, b: jint) -> jint {' >> src/lib.rs
+        echo '    a + b' >> src/lib.rs
+        echo '}' >> src/lib.rs
         cargo build --release
 
     - name: Move compiled library
