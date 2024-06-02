@@ -27,15 +27,20 @@ jobs:
         profile: minimal
         override: true
 
-    - name: Build Rust library
+    - name: Create Rust library
       run: |
-        cd src/main/resources/META-INF/native/lib
+        mkdir -p src/main/resources/META-INF/native
+        cd src/main/resources/META-INF/native
         cargo new rustlib --lib
         cd rustlib
         echo '[lib]
         crate-type = ["cdylib"]
+
+        [dependencies]
+        jni = "0.19.0"
         ' >> Cargo.toml
-        echo 'use jni::JNIEnv;
+        echo 'use jni::sys::jint;
+        use jni::JNIEnv;
         use jni::objects::JClass;
 
         #[no_mangle]
@@ -44,7 +49,11 @@ jobs:
         }' > src/lib.rs
         cargo build --release
 
+    - name: Move compiled library
+      run: |
+        mv src/main/resources/META-INF/native/rustlib/target/release/librustlib.so src/main/resources/META-INF/native/
+
     - name: Run Java application
       run: |
         mvn clean install
-        java -Djava.library.path=src/main/resources/META-INF/native/lib/target/release -cp target/java-rust-bridge-1.0-SNAPSHOT.jar com.example.Bridge
+        java -Djava.library.path=src/main/resources/META-INF/native -cp target/java-rust-bridge-1.0-SNAPSHOT.jar com.example.Bridge
