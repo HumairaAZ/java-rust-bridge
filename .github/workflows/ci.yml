@@ -1,0 +1,50 @@
+name: Java CI with Rust
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up JDK 11
+      uses: actions/setup-java@v1
+      with:
+        java-version: '11'
+
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+
+    - name: Build Rust library
+      run: |
+        cd src/main/resources/META-INF/native/lib
+        cargo new rustlib --lib
+        cd rustlib
+        echo '[lib]
+        crate-type = ["cdylib"]
+        ' >> Cargo.toml
+        echo 'use jni::JNIEnv;
+        use jni::objects::JClass;
+
+        #[no_mangle]
+        pub extern "system" fn Java_com_example_Bridge_add(env: JNIEnv, class: JClass, a: jint, b: jint) -> jint {
+            a + b
+        }' > src/lib.rs
+        cargo build --release
+
+    - name: Run Java application
+      run: |
+        mvn clean install
+        java -Djava.library.path=src/main/resources/META-INF/native/lib/target/release -cp target/java-rust-bridge-1.0-SNAPSHOT.jar com.example.Bridge
